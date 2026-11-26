@@ -8,17 +8,15 @@
 import SwiftUI
 
 struct ContentView: View {
+    let productService: any ProductService
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            CatalogueView(service: productService)
         }
-        .padding()
     }
 }
 
 #Preview {
-    ContentView()
+    ContentView(productService: MockProductService())
 }
