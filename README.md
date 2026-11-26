@@ -2,7 +2,7 @@
 
 A native SwiftUI iPhone and iPad app for product browsing, live name search, product details, and sales enquiry forms.
 
-> **Before running the app:** Make sure the backend server is running on your Mac at **`http://localhost:3000`**. The checked-in Debug Run scheme enables `--use-local-backend`. Keep the server running while using the simulator. Release builds use `https://product-catalogue-backend-qzyh.onrender.com`.
+> **Before running the app:** Make sure the backend server is running on your Mac at **`http://localhost:3000`**. The checked-in Debug Run scheme enables `--use-local-backend`. Keep the server running while using the simulator.
 
 ## Features
 
