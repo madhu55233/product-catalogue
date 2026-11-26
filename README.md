@@ -2,8 +2,6 @@
 
 A native SwiftUI iPhone and iPad app for product browsing, live name search, product details, and sales enquiry forms.
 
-> **Current status:** The app uses `https://product-catalogue-backend-qzyh.onrender.com`. Catalogue endpoints currently return **502** because Fake Store API blocks Render requests; enquiries return **503** until Resend is configured. Errors offer manual retry, never mock fallback or false success.
-
 ## Features
 
 - Up to five backend-ranked featured products and category cards with product counts.
