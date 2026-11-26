@@ -2,6 +2,8 @@
 
 A native SwiftUI iPhone and iPad app for product browsing, live name search, product details, and sales enquiry forms.
 
+> **Before running the app:** Make sure the backend server is running on your Mac at **`http://localhost:3000`**. The checked-in Debug Run scheme enables `--use-local-backend`. Keep the server running while using the simulator. Release builds use `https://product-catalogue-backend-qzyh.onrender.com`.
+
 ## Features
 
 - Up to five backend-ranked featured products and category cards with product counts.
@@ -16,11 +18,19 @@ A native SwiftUI iPhone and iPad app for product browsing, live name search, pro
 - macOS capable of running **Xcode 27.2**, the verified development version, or a newer compatible Xcode.
 - An **iOS/iPadOS 27.2 or later** simulator or device. The app and test targets use a 27.2 deployment target.
 - Full Xcode, not only standalone Command Line Tools.
-- Internet access to the deployed backend is required. No third-party packages, CocoaPods installation, or client API keys are needed.
+- A backend server running locally on port **3000** for the default Debug simulator run. The backend needs internet access to its upstream providers. No third-party iOS packages, CocoaPods installation, or client API keys are needed.
 
 The project uses Swift 5 language mode with Xcode's compiler; this does not mean an older Xcode can open or build the project.
 
 ## Run the app
+
+### Start the backend first
+
+1. Open the separate **product-catalogue-backend** repository and follow its README to install dependencies, configure its environment, and start the server on port **3000**.
+2. Keep that server process running while using the app.
+3. Verify `http://localhost:3000/health` returns HTTP **200** with `{"status":"ok"}`. Also check `http://localhost:3000/api/products` returns HTTP **200** with a product array; a healthy server alone does not guarantee upstream product access.
+
+If the server is stopped or uses a different port, the app cannot load products. Start it on port 3000, then tap **Retry** in the app.
 
 ### iOS Simulator
 
@@ -43,9 +53,11 @@ The project uses Swift 5 language mode with Xcode's compiler; this does not mean
 4. Select an iPhone or iPad simulator running **iOS 27.2 or later**. Install a compatible runtime in Xcode Settings if needed, then create a simulator under **Window → Devices and Simulators**.
 5. Press **⌘R** (**Product → Run**).
 
-Normal launches use the deployed backend. Until upstream access recovers, expect “Unable to load products” and Retry. For offline previews, add `--use-test-fixtures` to the Debug scheme launch arguments. Remove it to test networking; Release ignores this flag.
+The Debug Run scheme uses the local server by default. To use the hosted backend, open **Product → Scheme → Edit Scheme → Run → Arguments** and uncheck `--use-local-backend`. For offline previews, enable `--use-test-fixtures`; keep it disabled to test real backend data. Release builds ignore both flags.
 
 ### Physical device
+
+**`localhost` on an iPhone refers to the phone, not your Mac.** Disable `--use-local-backend` to use the hosted backend on a physical device. The localhost setup above is intended for the iOS Simulator.
 
 1. Connect and trust a device running iOS/iPadOS 27.2 or later; enable Developer Mode if prompted.
 2. Under **ProductCatalogue target → Signing & Capabilities**, choose your own development team and enable automatic signing. The checked-in team belongs to the original development environment.
@@ -114,7 +126,7 @@ Lightweight MVVM using SwiftUI, `@Observable` view models, and asynchronous serv
 - `ProductCatalogue/ProductCatalogueTests/`: unit tests.
 - `ProductCatalogue/ProductCatalogueUITests/`: UI tests.
 
-`BackendProductService` and `BackendEnquiryService` are injected at the app root. `BackendClient` owns the HTTPS base URL, JSON decoding, error mapping and 60-second request timeout. Mock/unavailable services are reserved for previews and explicitly enabled Debug tests.
+`BackendProductService` and `BackendEnquiryService` are injected at the app root. `BackendClient` selects the local HTTP or hosted HTTPS base URL and owns JSON decoding, error mapping and the 60-second request timeout. Mock/unavailable services are reserved for previews and explicitly enabled Debug tests.
 
 ## Backend and email delivery
 
@@ -135,7 +147,7 @@ The strict enquiry payload contains only `name`, `email`, `message` and `product
 
 The backend does not implement idempotency. Client UUIDs are not sent as unsupported fields. There are no automatic POST retries; ambiguous failures warn that manual retries may duplicate email.
 
-HTTP unit tests use injected transports; UI tests explicitly enable fixtures. They do not depend on backend availability or send emails.
+HTTP unit tests use injected transports; regular UI tests explicitly enable fixtures and do not depend on backend availability. The opt-in `LocalBackendTests` smoke test requires the local server and `TEST_RUNNER_RUN_LOCAL_BACKEND_TESTS=1`. None of these tests send emails.
 
 - [ENQUIRY.md](ENQUIRY.md): delivery status and integration requirements.
 - [SEARCH.md](SEARCH.md): current matching rules and examples.
@@ -143,6 +155,7 @@ HTTP unit tests use injected transports; UI tests explicitly enable fixtures. Th
 
 ## Troubleshooting
 
+- **Cannot connect to localhost:** make sure the backend is still running on your Mac at `http://localhost:3000`, check `/health` and `/api/products`, then tap **Retry**. Use the simulator, not a physical iPhone, for this localhost configuration.
 - **No matching simulator:** install and select an iOS 27.2-or-later runtime. Older simulators cannot run the current deployment target.
 - **Project will not open:** use Xcode 27.2 or newer compatible Xcode and open the `.xcodeproj` directory rather than individual source files.
 - **Wrong command-line tools:** check `xcodebuild -version`; select the intended Xcode in **Xcode → Settings → Locations → Command Line Tools**.
