@@ -18,9 +18,19 @@
 - `isFeatured = true` identifies a product for the home screen's featured section. Products marked `false` remain available through category browsing and search.
 - Five mock products are manually marked as featured for now. The planned backend integration will supply the selection; Fake Store API customer ratings alone do not identify featured products.
 
+## Step 2 — Featured home screen
+
+- Use `@Observable` with `@MainActor` for the catalogue view model. The view owns it through `@State`; the service is injected from the app entry point.
+- A single state enum represents idle, loading, loaded products, or failure. Empty featured results are a successful load, not a network failure.
+- Keep all fetched products in memory, deriving featured products with `isFeatured`. Do not silently select other products when no featured products exist, or truncate a backend selection to five; the data source owns the curated selection.
+- SwiftUI's `.task` manages initial loading and retries. Cancellation returns to idle rather than showing an error. Already loaded data is reused for the lifetime of this view model; refresh and persistent caching are deferred.
+- Use an adaptive grid and reusable product tiles, with a single column at accessibility text sizes, semantic system colours, combined accessibility labels, and native USD formatting.
+- Show a generic, actionable failure message rather than exposing raw networking errors. More detailed diagnostics can be added with backend integration.
+- View-model tests cover filtering, loading, empty data, no featured selections, retry after failure, cancellation, and avoiding repeated fetches after success.
+
 ## Current limitations
 
-Only the model, mock service, and fixture tests are implemented in this step. The starter screen is unchanged. Browsing, search, details, enquiry submission, and backend integration remain to be implemented; no email is sent.
+The app displays five mock featured products with loading, empty, and retry states. Tiles are display-only. Category browsing, search, product details, enquiry submission, and backend integration remain to be implemented; no email is sent. Images use placeholders until URLs are supplied.
 
 ## Tracking
 
