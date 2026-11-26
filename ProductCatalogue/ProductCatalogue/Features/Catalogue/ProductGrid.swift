@@ -14,7 +14,16 @@ struct ProductGrid: View {
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
             ForEach(products) { product in
-                ProductTile(product: product)
+                NavigationLink {
+                    ProductDetailsView(product: product)
+                } label: {
+                    ProductTile(product: product)
+                        .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("View product details")
+                .accessibilityIdentifier("product-tile-\(product.id)")
             }
         }
     }

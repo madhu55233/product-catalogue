@@ -69,8 +69,6 @@ struct ProductTile: View {
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(style.tint.opacity(0.16))
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("product-tile-\(product.id)")
     }
 
     private var placeholder: some View {
