@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct ProductDetailsView: View {
+    @Environment(\.enquiryService) private var enquiryService
+    @State private var isEnquiryPresented = false
+
     let product: Product
 
     private var style: CatalogueCategoryStyle {
@@ -59,6 +62,26 @@ struct ProductDetailsView: View {
             .frame(maxWidth: .infinity)
         }
         .accessibilityIdentifier("product-details")
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                isEnquiryPresented = true
+            } label: {
+                Label("Enquire", systemImage: "envelope.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .accessibilityIdentifier("product-enquire-button")
+            .padding()
+            .background(CatalogueTheme.surface)
+        }
+        .sheet(isPresented: $isEnquiryPresented) {
+            NavigationStack {
+                EnquiryView(product: product, service: enquiryService)
+            }
+        }
         .background(CatalogueTheme.background)
         .tint(CatalogueTheme.accent)
         .navigationTitle("Product details")
