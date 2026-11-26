@@ -5,7 +5,7 @@ final class ProductSearchTests: XCTestCase {
     func testEveryMatchesOnlyBackpackAsYouTypeAndDeletingRestoresBrowsing() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -30,7 +30,7 @@ final class ProductSearchTests: XCTestCase {
     func testSearchButtonShowsOnlyMatchingProductsAndClearRestoresBrowsing() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -56,7 +56,7 @@ final class ProductSearchTests: XCTestCase {
     func testKeyboardSubmissionAndLiveEditingUpdateNameMatches() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -78,7 +78,7 @@ final class ProductSearchTests: XCTestCase {
     func testSearchExcludesDescriptionOnlyMatches() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -93,7 +93,7 @@ final class ProductSearchTests: XCTestCase {
     func testNoMatchesCanBeClearedAndSearchedAgain() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -116,7 +116,7 @@ final class ProductSearchTests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-        app.launch()
+        app.launchWithFixtures()
         let input = app.textFields["product-search-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()

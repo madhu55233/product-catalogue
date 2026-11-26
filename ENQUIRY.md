@@ -1,36 +1,27 @@
 # Product enquiry
 
-## Current status
+## Integration status
 
-The iOS enquiry flow is implemented, but **real email delivery is not configured**. The repository contains no backend endpoint, email API contract, or sales inbox address. The default `UnavailableEnquiryService` always throws an explicit configuration error; it never reports a successful send.
+The app submits to `https://product-catalogue-backend-qzyh.onrender.com/api/enquiries` through `BackendEnquiryService`. The backend currently returns 503 until Resend is configured. Live inbox receipt has not been verified. Automated tests never send real emails.
 
-The email-delivery acceptance criterion cannot be verified until the backend is supplied and a real message is confirmed in the sales inbox. No emails are sent by the automated tests.
+## Request and acceptance
 
-## Client behavior
+- POST JSON with exactly `name`, `email`, `message`, and the selected `productId`.
+- Name, valid email and a nonblank message are required. Phone is optional and appended to the message because the backend rejects unknown fields.
+- Client limits: name 100, email 254, phone 40, message 2,000 characters. The combined message remains below the backend's 3,000-character limit.
+- Only HTTP 202 with `status: accepted` and a valid UUID receipt transitions to Thank you. This confirms provider acceptance, not guaranteed delivery.
+- No product title, request UUID, or separate phone field is sent to the strict endpoint.
 
-- Enquire on any product-details page opens a product-specific contact form.
-- Name and a syntactically valid email address are required. Phone and message are optional.
-- Maximum lengths: name 100 characters, email 254, phone 40, message 2,000.
-- Submit validates fields, normalizes surrounding whitespace, and includes the selected product ID and title.
-- The form shows sending progress and blocks repeated submissions and dismissal while sending.
-- Only a successful `EnquiryService.send` result transitions to the “Thank you” screen. Errors retain contact details for retry. Cancellation never reports success.
-- Contact data stays in memory only and is cleared on success or when the form is discarded. The client does not log contacts or messages.
-- Retries with unchanged details reuse a request UUID. A backend adapter must use that ID and the backend must enforce idempotency; a client UUID alone cannot guarantee exactly-once email delivery.
+## Errors and retries
 
-## Delivery integration required
+The form retains inputs on validation, network, HTTP, or receipt-decoding failure. It distinguishes unavailable email (503), rate limits (429), invalid input (400), timeout, offline and provider/server failures. Input is kept in memory, never logged, and cleared after acceptance or dismissal.
 
-Provide:
+Repeated submissions and dismissal are blocked while sending. Cancellation never reports success. POST requests are not automatically retried. Ambiguous failures warn that retrying may duplicate email.
 
-1. The enquiry backend URL and request/response API contract, including any authentication requirements.
-2. The destination sales inbox (configured on the backend).
-3. How the backend confirms email submission and handles retries or ambiguous failures.
+The existing form model retains a local request UUID for unchanged retries, but the supplied backend does not support idempotency and does not accept that UUID. This is not exactly-once delivery protection. Server-side idempotency is required before safe automatic retries can be added.
 
-Implement `EnquiryService` using that agreed contract and inject it through the `enquiryService` SwiftUI environment at the app root. Do not put SMTP passwords or email-provider secrets in the iOS application. No endpoint, provider, or API contract has been guessed in this implementation.
+## Deployment and verification
 
-The backend should validate input, resolve the product using its ID, use a verified sender and a fixed sales recipient, handle contact email safely as reply-to, and apply appropriate authentication/rate limiting, idempotency, and data-retention rules. Returning a successful HTTP response without sending or accepting the email is not sufficient.
+Configure Resend credentials, a verified sender and destination inbox on the backend, never in the app. Resolve the catalogue upstream 502 so customers can reach product details. With approved test contacts, verify provider acceptance and receipt in the sales inbox. A healthy `/health` endpoint alone is insufficient.
 
-## Verification
-
-Unit tests use controlled test services to cover validation, normalized product/contact payloads, success, failure, cancellation, retries, duplicate-submit protection, and the unconfigured service. UI tests cover opening the form, required-field validation, cancellation at accessibility text sizes, and an honest delivery-unavailable error with retained contacts. Existing product-details tests protect browsing and navigation.
-
-Once delivery is integrated, submit an enquiry with approved test contact details, confirm exactly one email in the configured sales inbox with the correct product and contact information, and verify the customer sees “Thank you”. Test backend failures separately and ensure they never display that confirmation.
+Unit tests cover the strict request body, 202 receipt validation, 503 retention, malformed responses, validation, duplicate-submit prevention, cancellation and retry state. UI tests use explicit offline fixtures to test the form without live email.

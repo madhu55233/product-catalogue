@@ -70,13 +70,22 @@ struct EnquiryViewModelTests {
         #expect(viewModel.name.isEmpty && viewModel.email.isEmpty && viewModel.phone.isEmpty && viewModel.message.isEmpty)
     }
 
-    @Test func phoneAndMessageAreOptional() async {
+    @Test func phoneIsOptional() async {
         let service = RecordingEnquiryService()
         let viewModel = validForm(service: service)
         await viewModel.submit()
         #expect(viewModel.state == .sent)
         #expect(service.requests.first?.details.phone == "")
-        #expect(service.requests.first?.details.message == "")
+        #expect(service.requests.first?.details.message == "Is this available?")
+    }
+
+    @Test func blankMessageDoesNotSend() async {
+        let service = RecordingEnquiryService()
+        let viewModel = validForm(service: service)
+        viewModel.message = " \n "
+        await viewModel.submit()
+        #expect(viewModel.validationMessage(for: .message) == "Enter a message.")
+        #expect(service.requests.isEmpty)
     }
 
     @Test func failurePreservesDetailsAndRetryReusesTheSameRequestID() async {
@@ -150,6 +159,7 @@ struct EnquiryViewModelTests {
         let viewModel = EnquiryViewModel(product: product, service: service)
         viewModel.name = "Alex Customer"
         viewModel.email = "alex@example.com"
+        viewModel.message = "Is this available?"
         return viewModel
     }
 }

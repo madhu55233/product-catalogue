@@ -5,7 +5,7 @@ final class CategoryNavigationTests: XCTestCase {
     func testHomeSeparatesCategoriesAndFeaturedProducts() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
 
         let electronics = app.buttons["category-link-Electronics"]
         XCTAssertTrue(electronics.waitForExistence(timeout: 5))
@@ -40,7 +40,7 @@ final class CategoryNavigationTests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-        app.launch()
+        app.launchWithFixtures()
 
         XCTAssertTrue(app.buttons["category-link-Accessories"].waitForExistence(timeout: 5))
         let electronics = app.buttons["category-link-Electronics"]
@@ -58,14 +58,14 @@ final class CategoryNavigationTests: XCTestCase {
     func testBrowseCategoriesAndReturnHome() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launch()
+        app.launchWithFixtures()
 
         let electronics = app.buttons["category-link-Electronics"]
         XCTAssertTrue(electronics.waitForExistence(timeout: 5))
         electronics.tap()
 
         XCTAssertTrue(app.navigationBars["Electronics"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Featured products"].exists)
+        XCTAssertTrue(app.staticTexts["Featured products"].waitForExistence(timeout: 5))
 
         for id in [2, 4, 6] {
             let tile = app.descendants(matching: .any)
@@ -93,7 +93,7 @@ final class CategoryNavigationTests: XCTestCase {
 
         XCTAssertTrue(app.navigationBars["Clothing"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)
-            .matching(identifier: "product-tile-3").firstMatch.exists)
+            .matching(identifier: "product-tile-3").firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["More products"].exists)
     }
 }

@@ -27,14 +27,14 @@ struct CatalogueCategoryStyle {
     let tint: Color
 
     init(category: String) {
-        switch category {
-        case "Accessories":
+        switch category.lowercased() {
+        case "accessories", "jewelery", "jewelry":
             symbol = "bag.fill"
             tint = CatalogueTheme.ochre
-        case "Clothing":
+        case "clothing", "men's clothing", "women's clothing":
             symbol = "tshirt.fill"
             tint = CatalogueTheme.indigo
-        case "Electronics":
+        case "electronics":
             symbol = "hifispeaker.fill"
             tint = CatalogueTheme.accent
         default:

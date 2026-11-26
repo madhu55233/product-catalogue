@@ -95,7 +95,7 @@ final class ProductDetailsTests: XCTestCase {
         if accessibilityTextSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         }
-        app.launch()
+        app.launchWithFixtures()
         XCTAssertTrue(app.textFields["product-search-input"].waitForExistence(timeout: 5))
         return app
     }
@@ -118,6 +118,7 @@ final class ProductDetailsTests: XCTestCase {
         in app: XCUIApplication, title: String, category: String, price: String,
         description: String, featured: Bool, file: StaticString = #filePath, line: UInt = #line
     ) {
+        XCTAssertTrue(app.staticTexts["product-details-title"].waitForExistence(timeout: 5), file: file, line: line)
         XCTAssertEqual(app.staticTexts["product-details-title"].label, title, file: file, line: line)
         XCTAssertEqual(app.staticTexts["product-details-category"].label, category, file: file, line: line)
         XCTAssertEqual(app.staticTexts["product-details-price"].label, price, file: file, line: line)

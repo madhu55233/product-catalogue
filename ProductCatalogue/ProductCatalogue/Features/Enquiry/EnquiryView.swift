@@ -21,7 +21,7 @@ struct EnquiryView: View {
                     Label("Thank you", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(CatalogueTheme.accent)
                 } description: {
-                    Text("Your enquiry about \(viewModel.product.title) has been sent to our sales team.")
+                    Text("Your enquiry about \(viewModel.product.title) has been accepted for delivery to our sales team.")
                 } actions: {
                     Button("Done") { dismiss() }
                         .buttonStyle(.borderedProminent)
@@ -105,11 +105,11 @@ struct EnquiryView: View {
                 Text("Your contact details and message will be shared with our sales team to respond to this enquiry.")
             }
 
-            Section("Message (optional)") {
+            Section("Message (required)") {
                 TextField("How can we help?", text: $viewModel.message, axis: .vertical)
                     .lineLimit(3...6)
                     .focused($focusedField, equals: .message)
-                    .accessibilityLabel("Message, optional")
+                    .accessibilityLabel("Message, required")
                     .accessibilityIdentifier("enquiry-message")
                 validationError(for: .message)
             }
