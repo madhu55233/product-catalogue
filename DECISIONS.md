@@ -28,9 +28,18 @@
 - Show a generic, actionable failure message rather than exposing raw networking errors. More detailed diagnostics can be added with backend integration.
 - View-model tests cover filtering, loading, empty data, no featured selections, retry after failure, cancellation, and avoiding repeated fetches after success.
 
+## Step 3 — Category browsing
+
+- Derive unique, sorted category names from loaded products. Match category names exactly as supplied by the data source; do not merge differently named categories or request them separately for this small catalogue.
+- The existing catalogue view model filters a selected category into featured and non-featured groups. These groups are disjoint and retain source order. No extra service or category view model is needed.
+- Category links appear above the home screen's featured products. Categories remain browsable even if no products are featured. A completely empty catalogue has its own empty state.
+- The category page receives product arrays and displays Featured products followed by More products. Hide a section when it has no products; if both groups are empty, show a category empty state.
+- Reuse ProductGrid and ProductTile across home and category pages, including accessibility text-size behaviour. NavigationLink uses the existing NavigationStack and native Back navigation.
+- Unit tests cover category uniqueness, filtering, disjoint groups, missing categories, featured-only and non-featured-only categories, and reuse without another fetch. A UI test exercises Electronics, Back navigation, and Clothing's absent additional section.
+
 ## Current limitations
 
-The app displays five mock featured products with loading, empty, and retry states. Tiles are display-only. Category browsing, search, product details, enquiry submission, and backend integration remain to be implemented; no email is sent. Images use placeholders until URLs are supplied.
+The app displays the five mock featured products and supports category browsing. Product tiles are still display-only. Search, product details, enquiry submission, and backend integration remain to be implemented; no email is sent. Images use placeholders until URLs are supplied.
 
 ## Tracking
 
