@@ -23,6 +23,8 @@ struct CatalogueView: View {
         .background(CatalogueTheme.background)
         .tint(CatalogueTheme.accent)
         .navigationTitle("Catalogue")
+        .environment(\.productService, viewModel.service)
+        .environment(\.featuredProductIDs, Set(viewModel.featuredProducts.map(\.id)))
         .task(id: loadAttempt) {
             await viewModel.load()
         }
@@ -38,7 +40,7 @@ struct CatalogueView: View {
                 ContentUnavailableView {
                     Label("Unable to load products", systemImage: "wifi.exclamationmark")
                 } description: {
-                    Text("Please try again. If the problem continues, check your connection.")
+                    Text(viewModel.errorMessage)
                 } actions: {
                     Button("Retry") {
                         loadAttempt += 1
@@ -47,8 +49,8 @@ struct CatalogueView: View {
                 }
             case .loaded:
                 if viewModel.isSearching {
-                    ProductSearchResultsView(
-                        products: viewModel.searchResults,
+                    RemoteSearchView(
+                        service: viewModel.service,
                         term: viewModel.searchTerm
                     )
                     .id(viewModel.searchTerm)
@@ -92,11 +94,9 @@ struct CatalogueView: View {
                     let count = products.featured.count + products.additional.count
                     let style = CatalogueCategoryStyle(category: category)
                     NavigationLink {
-                        CategoryView(
-                            category: category,
-                            featuredProducts: products.featured,
-                            additionalProducts: products.additional
-                        )
+                        RemoteCategoryView(service: viewModel.service, category: category,
+                                           featuredIDs: Set(viewModel.featuredProducts.map(\.id)))
+                            .environment(\.productService, viewModel.service)
                     } label: {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
@@ -151,7 +151,7 @@ struct CatalogueView: View {
 
     private var featuredSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionHeading("Featured products", subtitle: "Handpicked highlights from our catalogue.", symbol: "star.fill", tint: CatalogueTheme.ochre)
+            sectionHeading("Featured products", subtitle: "Top-rated highlights from our catalogue.", symbol: "star.fill", tint: CatalogueTheme.ochre)
 
             if viewModel.featuredProducts.isEmpty {
                 Text("No featured products yet. Explore a category above.")

@@ -2,15 +2,15 @@
 
 A native SwiftUI iPhone and iPad app for product browsing, live name search, product details, and sales enquiry forms.
 
-> **Current status:** Products use local mock data. The enquiry form is implemented, but real email delivery is **not configured**. Valid submissions currently show a delivery-unavailable error, not a false success message.
+> **Current status:** The app uses `https://product-catalogue-backend-qzyh.onrender.com`. Catalogue endpoints currently return **502** because Fake Store API blocks Render requests; enquiries return **503** until Resend is configured. Errors offer manual retry, never mock fallback or false success.
 
 ## Features
 
-- Five curated featured products and category cards with product counts.
+- Up to five backend-ranked featured products and category cards with product counts.
 - Category pages separating featured and additional products.
-- Live, case- and diacritic-insensitive search of product names, including non-featured items.
+- Live, debounced, case-insensitive backend search of product names, including non-featured items.
 - Product details accessible from home, categories, and search, with USD price, description, category, and featured status.
-- Enquiry form with required name/email, optional phone/message, validation, retry handling, and a success-only “Thank you” state.
+- Enquiry form with required name/email/message, optional phone, validation, retry handling, and a success-only “Thank you” state.
 - Adaptive grids, Dynamic Type, light/dark styling, and accessible controls.
 
 ## Requirements
@@ -18,7 +18,7 @@ A native SwiftUI iPhone and iPad app for product browsing, live name search, pro
 - macOS capable of running **Xcode 27.2**, the verified development version, or a newer compatible Xcode.
 - An **iOS/iPadOS 27.2 or later** simulator or device. The app and test targets use a 27.2 deployment target.
 - Full Xcode, not only standalone Command Line Tools.
-- No third-party packages, CocoaPods installation, API keys, or backend are needed for the mock catalogue.
+- Internet access to the deployed backend is required. No third-party packages, CocoaPods installation, or client API keys are needed.
 
 The project uses Swift 5 language mode with Xcode's compiler; this does not mean an older Xcode can open or build the project.
 
@@ -45,7 +45,7 @@ The project uses Swift 5 language mode with Xcode's compiler; this does not mean
 4. Select an iPhone or iPad simulator running **iOS 27.2 or later**. Install a compatible runtime in Xcode Settings if needed, then create a simulator under **Window → Devices and Simulators**.
 5. Press **⌘R** (**Product → Run**).
 
-The app loads seven mock products across Accessories, Clothing, and Electronics; five are featured. Image URLs are intentionally absent, so placeholders are expected.
+Normal launches use the deployed backend. Until upstream access recovers, expect “Unable to load products” and Retry. For offline previews, add `--use-test-fixtures` to the Debug scheme launch arguments. Remove it to test networking; Release ignores this flag.
 
 ### Physical device
 
@@ -57,8 +57,8 @@ The app loads seven mock products across Accessories, Clothing, and Electronics;
 ## Try the flows
 
 - Browse a category, then tap a tile to open its details.
-- Type `Every` in search: only **Everyday Backpack** matches. Descriptions and categories are not searched. Results update while typing; Search dismisses the keyboard, and clearing the field restores browsing.
-- Open a product and tap **Enquire**. Invalid required fields show validation messages. A valid form currently shows a delivery-unavailable error and retains contacts because no email backend is configured.
+- Type a name fragment such as `bag`. Search requests run after a 350 ms debounce; descriptions and categories are excluded. Search dismisses the keyboard, and clearing restores browsing. Terms are limited to 100 characters.
+- Open a product and tap **Enquire**. Name, email and message are required. The current backend 503 retains inputs and reports email unavailability.
 
 ## Build and test
 
@@ -116,15 +116,28 @@ Lightweight MVVM using SwiftUI, `@Observable` view models, and asynchronous serv
 - `ProductCatalogue/ProductCatalogueTests/`: unit tests.
 - `ProductCatalogue/ProductCatalogueUITests/`: UI tests.
 
-`MockProductService` is injected from the app entry point. `EnquiryService` uses the SwiftUI environment and defaults to `UnavailableEnquiryService`.
+`BackendProductService` and `BackendEnquiryService` are injected at the app root. `BackendClient` owns the HTTPS base URL, JSON decoding, error mapping and 60-second request timeout. Mock/unavailable services are reserved for previews and explicitly enabled Debug tests.
 
 ## Backend and email delivery
 
-To complete email delivery, supply the **backend endpoint/API contract**, authentication requirements, and **sales inbox address**. Implement `EnquiryService` against that contract and inject it at the app root.
+| Action | Backend endpoint |
+| --- | --- |
+| Home/counts | `GET /api/products`, `GET /api/categories` |
+| Featured ranking | `GET /api/products/featured` |
+| Category | `GET /api/products?category=…` |
+| Search | `GET /api/products/search?q=…` |
+| Details | `GET /api/products/:id` |
+| Enquiry | `POST /api/enquiries` |
 
-Email credentials, recipient configuration, input validation, rate limiting, and idempotent retries belong on the backend. **Never embed SMTP passwords or email-provider secrets in the iOS app.** Client request IDs prevent duplicate emails only when the server enforces idempotency.
+No direct Fake Store **API** requests are made by the client. Images load from URLs supplied by the backend. `/health` is an operational check, not proof that upstream dependencies work. Home requires all three home requests to succeed. Remote screens show loading, empty/error and manual-retry states; cancelled or superseded searches cannot publish stale results.
 
-“Thank you” is shown only after a successful service response. The default service deliberately reports unavailability. Real receipt in the sales inbox has not been implemented or verified. Product networking is also pending; browsing and search use the loaded mock catalogue.
+Configure Resend, sender and recipient on the backend and resolve its Fake Store access failure. No backend files were changed for this integration. Keep all email credentials on the server.
+
+The strict enquiry payload contains only `name`, `email`, `message` and `productId`; optional phone information is appended to the message. Thank you requires HTTP 202 plus a decoded `status: accepted` and UUID receipt. Acceptance does not guarantee inbox delivery; live delivery remains unverified.
+
+The backend does not implement idempotency. Client UUIDs are not sent as unsupported fields. There are no automatic POST retries; ambiguous failures warn that manual retries may duplicate email.
+
+HTTP unit tests use injected transports; UI tests explicitly enable fixtures. They do not depend on backend availability or send emails.
 
 - [ENQUIRY.md](ENQUIRY.md): delivery status and integration requirements.
 - [SEARCH.md](SEARCH.md): current matching rules and examples.
@@ -136,5 +149,8 @@ Email credentials, recipient configuration, input validation, rate limiting, and
 - **Project will not open:** use Xcode 27.2 or newer compatible Xcode and open the `.xcodeproj` directory rather than individual source files.
 - **Wrong command-line tools:** check `xcodebuild -version`; select the intended Xcode in **Xcode → Settings → Locations → Command Line Tools**.
 - **Signing errors:** use the unsigned simulator build command or configure your own team and bundle identifiers for physical devices.
-- **No photos:** expected while mock image URLs are absent.
-- **Enquiry delivery unavailable:** expected until the backend is configured; no email is sent in this state.
+- **No photos:** image-host failures show placeholders; test fixtures intentionally omit photos.
+- **Enquiry delivery unavailable (503):** configure Resend on the backend; email has not been sent.
+- **502:** backend upstream access failed. A successful health check does not mean products are available.
+- **429:** wait before retrying.
+- **Timeout:** Render may be starting up; wait and retry.

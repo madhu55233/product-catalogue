@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductGrid: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.productService) private var service
 
     let products: [Product]
 
@@ -15,7 +16,7 @@ struct ProductGrid: View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
             ForEach(products) { product in
                 NavigationLink {
-                    ProductDetailsView(product: product)
+                    RemoteProductDetailsView(product: product, service: service)
                 } label: {
                     ProductTile(product: product)
                         .contentShape(RoundedRectangle(cornerRadius: 16))

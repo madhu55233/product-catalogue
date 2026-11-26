@@ -52,6 +52,7 @@ final class EnquiryViewModel {
         case .phone:
             return phone.count > 40 ? "Use no more than 40 characters for your phone number." : nil
         case .message:
+            if message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Enter a message." }
             return message.count > 2000 ? "Use no more than 2,000 characters for your message." : nil
         }
     }
@@ -94,6 +95,8 @@ final class EnquiryViewModel {
                 state = .editing
             } else if error as? EnquiryServiceError == .notConfigured {
                 state = .failed("Enquiries are currently unavailable because email delivery has not been configured. Your enquiry has not been sent.")
+            } else if let error = error as? BackendError {
+                state = .failed(error.enquiryMessage)
             } else {
                 state = .failed("We couldn’t confirm your enquiry was sent. Your details are still here; please try again.")
             }

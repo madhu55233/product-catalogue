@@ -26,6 +26,11 @@ final class ProductEnquiryTests: XCTestCase {
         email.tap()
         email.typeText("alex@example.com")
         if app.buttons["Done"].exists { app.buttons["Done"].tap() }
+        let message = app.textFields["enquiry-message"]
+        reveal(message, in: app)
+        message.tap()
+        message.typeText("Is this available?")
+        if app.buttons["Done"].exists { app.buttons["Done"].tap() }
         submit(in: app)
 
         let error = app.staticTexts["enquiry-submission-error"]
@@ -58,7 +63,7 @@ final class ProductEnquiryTests: XCTestCase {
         if accessibilityTextSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         }
-        app.launch()
+        app.launchWithFixtures()
         let search = app.textFields["product-search-input"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
         search.tap()

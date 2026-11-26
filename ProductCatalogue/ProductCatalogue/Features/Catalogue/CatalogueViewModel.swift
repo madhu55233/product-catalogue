@@ -13,7 +13,9 @@ final class CatalogueViewModel {
 
     private(set) var state: State = .idle
     var searchText = ""
-    private let service: any ProductService
+    let service: any ProductService
+    private var snapshot: CatalogueSnapshot?
+    private(set) var errorMessage = ""
 
     var searchTerm: String {
         guard case .loaded = state else { return "" }
@@ -37,12 +39,12 @@ final class CatalogueViewModel {
 
     var featuredProducts: [Product] {
         guard case let .loaded(products) = state else { return [] }
-        return products.filter(\.isFeatured)
+        return snapshot?.featured ?? products.filter(\.isFeatured)
     }
 
     var categories: [String] {
         guard case let .loaded(products) = state else { return [] }
-        return Array(Set(products.map(\.category))).sorted()
+        return snapshot?.categories ?? Array(Set(products.map(\.category))).sorted()
     }
 
     func products(in category: String) -> (featured: [Product], additional: [Product]) {
@@ -70,14 +72,16 @@ final class CatalogueViewModel {
         state = .loading
 
         do {
-            let products = try await service.fetchProducts()
+            let result = try await service.fetchCatalogue()
             try Task.checkCancellation()
-            state = .loaded(products)
+            snapshot = result
+            state = .loaded(result.products)
         } catch {
             // Leaving a screen is not a user-facing network failure.
             if Task.isCancelled || error is CancellationError {
                 state = .idle
             } else {
+                errorMessage = BackendError.message(for: error)
                 state = .failed
             }
         }
