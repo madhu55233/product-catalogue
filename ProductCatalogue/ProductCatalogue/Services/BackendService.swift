@@ -35,7 +35,14 @@ enum BackendError: Error, Equatable, LocalizedError {
 }
 
 struct BackendClient: Sendable {
-    static let baseURL = URL(string: "https://product-catalogue-backend-qzyh.onrender.com")!
+    static var baseURL: URL {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--use-local-backend") {
+            return URL(string: "http://localhost:3000")!
+        }
+        #endif
+        return URL(string: "https://product-catalogue-backend-qzyh.onrender.com")!
+    }
     typealias Transport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
     private let transport: Transport
 
