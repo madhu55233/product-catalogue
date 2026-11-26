@@ -19,6 +19,20 @@ final class CatalogueViewModel {
         return products.filter(\.isFeatured)
     }
 
+    var categories: [String] {
+        guard case let .loaded(products) = state else { return [] }
+        return Array(Set(products.map(\.category))).sorted()
+    }
+
+    func products(in category: String) -> (featured: [Product], additional: [Product]) {
+        guard case let .loaded(products) = state else { return ([], []) }
+        let categoryProducts = products.filter { $0.category == category }
+        return (
+            featured: categoryProducts.filter(\.isFeatured),
+            additional: categoryProducts.filter { !$0.isFeatured }
+        )
+    }
+
     init(service: any ProductService) {
         self.service = service
     }
