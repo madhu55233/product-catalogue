@@ -10,6 +10,25 @@ struct CatalogueView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if case .loaded = viewModel.state {
+                ProductSearchBar(
+                    text: $viewModel.searchText,
+                    onClear: viewModel.clearSearch
+                )
+            }
+            catalogueContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(CatalogueTheme.background)
+        .tint(CatalogueTheme.accent)
+        .navigationTitle("Catalogue")
+        .task(id: loadAttempt) {
+            await viewModel.load()
+        }
+    }
+
+    private var catalogueContent: some View {
         Group {
             switch viewModel.state {
             case .idle, .loading:
@@ -27,7 +46,13 @@ struct CatalogueView: View {
                     .buttonStyle(.borderedProminent)
                 }
             case .loaded:
-                if viewModel.categories.isEmpty {
+                if viewModel.isSearching {
+                    ProductSearchResultsView(
+                        products: viewModel.searchResults,
+                        term: viewModel.searchTerm
+                    )
+                    .id(viewModel.searchTerm)
+                } else if viewModel.categories.isEmpty {
                     ContentUnavailableView(
                         "No products",
                         systemImage: "shippingbox",
@@ -48,12 +73,6 @@ struct CatalogueView: View {
                     }
                 }
             }
-        }
-        .background(CatalogueTheme.background)
-        .tint(CatalogueTheme.accent)
-        .navigationTitle("Catalogue")
-        .task(id: loadAttempt) {
-            await viewModel.load()
         }
     }
 

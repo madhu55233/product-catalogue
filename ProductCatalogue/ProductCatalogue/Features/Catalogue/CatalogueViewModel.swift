@@ -12,7 +12,28 @@ final class CatalogueViewModel {
     }
 
     private(set) var state: State = .idle
+    var searchText = ""
     private let service: any ProductService
+
+    var searchTerm: String {
+        guard case .loaded = state else { return "" }
+        return searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var isSearching: Bool {
+        !searchTerm.isEmpty
+    }
+
+    var searchResults: [Product] {
+        guard isSearching, case let .loaded(products) = state else { return [] }
+        return products.filter { product in
+            product.title.localizedStandardContains(searchTerm)
+        }
+    }
+
+    func clearSearch() {
+        searchText = ""
+    }
 
     var featuredProducts: [Product] {
         guard case let .loaded(products) = state else { return [] }

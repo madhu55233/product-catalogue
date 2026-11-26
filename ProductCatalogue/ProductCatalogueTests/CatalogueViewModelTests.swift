@@ -168,6 +168,141 @@ struct CatalogueViewModelTests {
         #expect(products.featured.isEmpty)
         #expect(products.additional.isEmpty)
     }
+
+    @Test func searchUpdatesAsTextChanges() async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+
+        viewModel.searchText = "lamp"
+        #expect(viewModel.isSearching)
+        #expect(viewModel.searchResults.map(\.id) == [4])
+
+        viewModel.searchText = "speaker"
+        #expect(viewModel.searchTerm == "speaker")
+        #expect(viewModel.searchResults.map(\.id) == [6])
+
+        viewModel.searchText = "speakerzz"
+        #expect(viewModel.searchResults.isEmpty)
+        viewModel.searchText = "speaker"
+        #expect(viewModel.searchResults.map(\.id) == [6])
+    }
+
+    @Test(arguments: ["backpack", "BACKPACK", "back", "  backpack\n", "Every"])
+    func searchMatchesPartialTitlesOnly(term: String) async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = term
+
+        #expect(viewModel.searchResults.map(\.id) == [1])
+    }
+
+    @Test func searchIncludesFeaturedAndNonFeaturedProductsWithoutDuplicates() async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = "s"
+
+        #expect(viewModel.searchResults.map(\.id) == [2, 3, 4, 5, 6, 7])
+        #expect(viewModel.searchResults.map(\.isFeatured) == [true, true, true, true, false, false])
+    }
+
+    @Test(arguments: ["ELECTRONICS", "padded", "comfortable"])
+    func searchExcludesDescriptionAndCategoryOnlyMatches(term: String) async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = term
+
+        #expect(viewModel.isSearching)
+        #expect(viewModel.searchResults.isEmpty)
+    }
+
+    @Test func searchIgnoresDiacritics() async {
+        let product = Product(id: 10, title: "Café mug", description: "Ceramic cup", price: 12,
+                              category: "Home", imageURL: nil, isFeatured: false)
+        let viewModel = CatalogueViewModel(service: StubProductService(response: .success([product])))
+        await viewModel.load()
+        viewModel.searchText = "CAFE"
+
+        #expect(viewModel.searchResults == [product])
+    }
+
+    @Test func searchTreatsPunctuationLiterally() async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = ".*"
+        #expect(viewModel.searchResults.isEmpty)
+
+        viewModel.searchText = "T-Shirt"
+        #expect(viewModel.searchResults.map(\.id) == [3])
+    }
+
+    @Test func unmatchedSearchDoesNotFallBackToFeaturedProducts() async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = "no-such-product"
+
+        #expect(viewModel.isSearching)
+        #expect(viewModel.searchResults.isEmpty)
+        #expect(!viewModel.featuredProducts.isEmpty)
+    }
+
+    @Test(arguments: ["", "  \n\t "])
+    func blankTextRestoresBrowsingImmediately(term: String) async {
+        let viewModel = CatalogueViewModel(service: MockProductService())
+        await viewModel.load()
+        viewModel.searchText = "speaker"
+        viewModel.searchText = term
+
+        #expect(!viewModel.isSearching)
+        #expect(viewModel.searchTerm.isEmpty)
+        #expect(viewModel.featuredProducts.count == 5)
+        #expect(viewModel.categories.count == 3)
+    }
+
+    @Test func clearingSearchResetsTextAndResultsWithoutFetchingAgain() async throws {
+        let products = try await MockProductService().fetchProducts()
+        let service = StubProductService(response: .success(products))
+        let viewModel = CatalogueViewModel(service: service)
+        await viewModel.load()
+        for term in ["lamp", "speaker", "Accessories"] {
+            viewModel.searchText = term
+            _ = viewModel.searchResults
+        }
+        viewModel.clearSearch()
+
+        #expect(viewModel.searchText.isEmpty)
+        #expect(viewModel.searchTerm.isEmpty)
+        #expect(!viewModel.isSearching)
+        #expect(viewModel.searchResults.isEmpty)
+        #expect(viewModel.state == .loaded(products))
+        #expect(service.requestCount == 1)
+    }
+
+    @Test func emptyCatalogueCanBeSearchedWithoutAnError() async {
+        let viewModel = CatalogueViewModel(service: StubProductService(response: .success([])))
+        await viewModel.load()
+        viewModel.searchText = "lamp"
+
+        #expect(viewModel.isSearching)
+        #expect(viewModel.searchResults.isEmpty)
+        #expect(viewModel.state == .loaded([]))
+    }
+
+    @Test func searchCannotReplaceIdleLoadingOrFailureStates() async {
+        let service = StubProductService(response: .failure(TestError.offline))
+        let viewModel = CatalogueViewModel(service: service)
+        viewModel.searchText = "lamp"
+        #expect(!viewModel.isSearching)
+        #expect(viewModel.state == .idle)
+
+        service.onFetch = { [weak viewModel] in
+            #expect(viewModel?.state == .loading)
+            #expect(viewModel?.isSearching == false)
+        }
+        await viewModel.load()
+        #expect(viewModel.state == .failed)
+        #expect(!viewModel.isSearching)
+        #expect(viewModel.searchResults.isEmpty)
+    }
 }
 
 private enum TestError: Error {
