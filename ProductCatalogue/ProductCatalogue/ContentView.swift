@@ -14,6 +14,7 @@ struct ContentView: View {
         NavigationStack {
             CatalogueView(service: productService)
         }
+        .tint(CatalogueTheme.accent)
     }
 }
 
